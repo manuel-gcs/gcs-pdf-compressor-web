@@ -1,19 +1,18 @@
-import {useState} from "react";
+import { useState } from "react";
 import "./App.css";
-import {_GSPS2PDF} from "./lib/worker-init.js";
+import { _GSPS2PDF } from "./lib/worker-init.js";
 
-
-function loadPDFData(response, filename) {
+function loadPDFData(response) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("GET", response);
     xhr.responseType = "arraybuffer";
     xhr.onload = function () {
       window.URL.revokeObjectURL(response);
-      const blob = new Blob([xhr.response], {type: "application/pdf"});
+      const blob = new Blob([xhr.response], { type: "application/pdf" });
       const pdfURL = window.URL.createObjectURL(blob);
       const size = xhr.response.byteLength;
-      resolve({pdfURL, size});
+      resolve({ pdfURL, size });
     };
     xhr.send();
   });
@@ -25,131 +24,174 @@ function App() {
   const [downloadLink, setDownloadLink] = useState(undefined);
 
   async function compressPDF(pdf, filename) {
-    const dataObject = {psDataURL: pdf};
-    const element = await _GSPS2PDF(dataObject)
-    const {pdfURL, size: newSize} = await loadPDFData(element, filename)
+    const dataObject = { psDataURL: pdf };
+    const element = await _GSPS2PDF(dataObject);
+    const { pdfURL } = await loadPDFData(element, filename);
+
     setDownloadLink(pdfURL);
     setState("toBeDownloaded");
   }
 
   const changeHandler = (event) => {
-    const file = event.target.files[0];
-    const url = window.URL.createObjectURL(file);
-    setFile({filename: file.name, url});
+    const selected = event.target.files[0];
+    const url = window.URL.createObjectURL(selected);
+    setFile({ filename: selected.name, url, size: selected.size });
     setState("selected");
   };
 
   const onSubmit = (event) => {
     event.preventDefault();
-    const {filename, url} = file;
-    compressPDF(url, filename);
+
+    // Limit of 50MB
+    if (file.size > 50 * 1024 * 1024) {
+      alert("This file is larger than 50 MB. Please choose a smaller PDF.");
+      return;
+    }
+
+    compressPDF(file.url, file.filename);
     setState("loading");
     return false;
   };
 
   let minFileName =
-    file && file.filename && file.filename.replace(".pdf", "-min.pdf");
+    file && file.filename && file.filename.replace(".pdf", "-optimized.pdf");
+
   return (
-    <>
-      <h1>Free Browser side PDF-Compressor</h1>
-      <p>
-        The best tool I know to compress PDF is{" "}
-        <a target={"_blank"} href={"https://ghostscript.com/"}>
-          Ghostscript
-        </a>{" "}
-        but this was not running in the browser. Until{" "}
-        <a target={"_blank"} href={"https://github.com/ochachacha/ps-wasm"}>
-          Ochachacha
-        </a>{" "}
-        ported the lib in{" "}
-        <a target={"_blank"} href={"https://webassembly.org/"}>
-          Webassembly
-        </a>
-        .
-      </p>
-      <p>
-        Based on his amazing work, I built this{" "}
-        <a
-          href={
-            "https://github.com/laurentmmeyer/ghostscript-pdf-compress.wasm"
-          }
-          target={"_blank"}
-        >
-          demo
-        </a>
-        . It's running on Vite and React. It imports the WASM on the fly when
-        you want compress a PDF.
-      </p>
-      <p>
-        Be aware that the Webassembly binary is weighting <b>10MB</b>.
-      </p>
-      <p>
-        <i>
-          Secure and private by design: the data never leaves your computer.
-        </i>
-      </p>
-      {state !== "loading" && state !== "toBeDownloaded" && (
-        <form onSubmit={onSubmit}>
-          <input
-            type="file"
-            accept={"application/pdf"}
-            name="file"
-            onChange={changeHandler}
-            id={"file"}
-          />
-          <div className={"label padded-button"}>
-            <label htmlFor={"file"}>
-              {!file || !file.filename
-                ? `Choose PDF to compress`
-                : file.filename}
-            </label>
-          </div>
-          {state === "selected" && (
-            <div className={"success-button padded-button padding-top"}>
-              <input
-                className={"button"}
+    <div
+      style={{
+        margin: 0,
+        padding: 0,
+        background: "#f0f2f5",
+        height: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        fontFamily: "Inter, Arial, sans-serif",
+      }}
+    >
+      <div
+        style={{
+          background: "white",
+          width: "95%",
+          maxWidth: "450px",
+          padding: "40px",
+          borderRadius: "14px",
+          boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
+          textAlign: "center",
+        }}
+      >
+        {/* LOGO GCS */}
+        <div style={{ marginBottom: "20px" }}>
+          <a
+            href="https://www.globalcitizensolutions.com"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <img
+              src="/globalcitizensolutions_logo.jpeg"
+              alt="GCS Logo"
+              style={{ width: "150px" }}
+            />
+          </a>
+        </div>
+
+        <h2 style={{ fontWeight: 600, marginBottom: "8px" }}>
+          GCS PDF Compressor
+        </h2>
+        <p style={{ color: "#555", fontSize: "14px", marginBottom: "4px" }}>
+          Upload a PDF and receive an optimized version automatically.
+        </p>
+
+        <div style={{ fontSize: "12px", color: "#3a7afe", margin: "12px 0" }}>
+          ✔ Secure environment: files never leave your browser.
+        </div>
+
+        <div style={{ fontSize: "12px", color: "#777", marginBottom: "20px" }}>
+          Maximum file size: 50 MB per upload.
+        </div>
+
+        {/* FORM */}
+        {state !== "loading" && state !== "toBeDownloaded" && (
+          <form onSubmit={onSubmit}>
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={changeHandler}
+              style={{
+                width: "100%",
+                padding: "15px",
+                background: "#f9f9f9",
+                border: "1px solid #ddd",
+                borderRadius: "8px",
+                cursor: "pointer",
+                marginBottom: "16px",
+              }}
+            />
+
+            {state === "selected" && (
+              <button
                 type="submit"
-                value={"🚀 Compress this PDF in the browser! 🚀"}
-              />
-            </div>
-          )}
-        </form>
-      )}
-      {state === "loading" && "Loading...."}
-      {state === "toBeDownloaded" && (
-        <>
-          <div className={"success-button padded-button"}>
-            <a href={downloadLink} download={minFileName}>
-              {`📄 Download ${minFileName} 📄`}
+                style={{
+                  background: "#3a7afe",
+                  color: "white",
+                  border: "none",
+                  padding: "14px",
+                  width: "100%",
+                  fontSize: "15px",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                }}
+              >
+                Compress PDF
+              </button>
+            )}
+          </form>
+        )}
+
+        {state === "loading" && (
+          <p style={{ marginTop: "10px", color: "#666" }}>
+            Processing... please wait.
+          </p>
+        )}
+
+        {state === "toBeDownloaded" && (
+          <>
+            <a
+              href={downloadLink}
+              download={minFileName}
+              style={{
+                display: "block",
+                padding: "14px",
+                background: "#3a7afe",
+                color: "white",
+                borderRadius: "8px",
+                fontWeight: "600",
+                textDecoration: "none",
+                marginBottom: "12px",
+              }}
+            >
+              Download {minFileName}
             </a>
-          </div>
-          <div className={"blue padded-button padding-top"}>
-            <a href={"./"}>{`🔁 Compress another PDF 🔁`}</a>
-          </div>
-        </>
-      )}
-      <p>
-        Everything is open-source and you can contribute{" "}
-        <a
-          href={
-            "https://github.com/laurentmmeyer/ghostscript-pdf-compress.wasm"
-          }
-          target={"_blank"}
-        >
-          here
-        </a>
-        .
-      </p>
-      <br/>
-      <p>
-        <i>This website uses no tracking, no cookies, no adtech.</i>
-      </p>
-      <p>
-        <a target={"_blank"} href={"https://meyer-laurent.com"}>
-          About me
-        </a>
-      </p>
-    </>
+
+            <a
+              href="./"
+              style={{
+                display: "block",
+                padding: "12px",
+                background: "#ddd",
+                borderRadius: "8px",
+                textDecoration: "none",
+                color: "#333",
+                fontWeight: "500",
+              }}
+            >
+              Compress another PDF
+            </a>
+          </>
+        )}
+      </div>
+    </div>
   );
 }
 
