@@ -4,22 +4,27 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [
     react({
-      jsxRuntime: "automatic" // força React runtime moderno no Vercel
-    }),
+      jsxRuntime: "automatic",
+      babel: {
+        plugins: [
+          // Necessário para garantir import automático de React na Vercel
+          "@babel/plugin-transform-react-jsx",
+          "@babel/plugin-transform-react-jsx-self",
+          "@babel/plugin-transform-react-jsx-source"
+        ]
+      }
+    })
   ],
-
-  worker: {
-    // Corrige erro do Vercel com Web Workers
-    format: "es"
-  },
-
   build: {
+    target: "esnext",
     sourcemap: false,
     rollupOptions: {
       output: {
-        // workers NÃO podem usar iife ou umd no Vercel
         format: "es"
       }
     }
+  },
+  worker: {
+    format: "es"
   }
 });
