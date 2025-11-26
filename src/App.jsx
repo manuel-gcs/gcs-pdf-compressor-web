@@ -3,7 +3,7 @@ import "./App.css";
 import { _GSPS2PDF } from "./lib/worker-init.js";
 
 function loadPDFData(response) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const xhr = new XMLHttpRequest();
     xhr.open("GET", response);
     xhr.responseType = "arraybuffer";
@@ -42,7 +42,6 @@ function App() {
   const onSubmit = (event) => {
     event.preventDefault();
 
-    // Limit of 50MB
     if (file.size > 50 * 1024 * 1024) {
       alert("This file is larger than 50 MB. Please choose a smaller PDF.");
       return;
@@ -69,6 +68,14 @@ function App() {
         fontFamily: "Inter, Arial, sans-serif",
       }}
     >
+      {/* Animation Keyframes */}
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+      `}</style>
+
       <div
         style={{
           background: "white",
@@ -98,6 +105,7 @@ function App() {
         <h2 style={{ fontWeight: 600, marginBottom: "8px" }}>
           GCS PDF Compressor
         </h2>
+
         <p style={{ color: "#555", fontSize: "14px", marginBottom: "4px" }}>
           Upload a PDF and receive an optimized version automatically.
         </p>
@@ -143,18 +151,31 @@ function App() {
                   fontWeight: 600,
                 }}
               >
-                Compress PDF
+                🚀 Compress PDF
               </button>
             )}
           </form>
         )}
 
+        {/* LOADING ANIMATION */}
         {state === "loading" && (
-          <p style={{ marginTop: "10px", color: "#666" }}>
-            Processing... please wait.
-          </p>
+          <div style={{ marginTop: "20px", color: "#666" }}>
+            <div
+              style={{
+                margin: "20px auto",
+                width: "45px",
+                height: "45px",
+                border: "4px solid #eee",
+                borderTopColor: "#3a7afe",
+                borderRadius: "50%",
+                animation: "spin 0.8s linear infinite",
+              }}
+            ></div>
+            <p>Processing your PDF...</p>
+          </div>
         )}
 
+        {/* DOWNLOAD BUTTON */}
         {state === "toBeDownloaded" && (
           <>
             <a
@@ -162,16 +183,18 @@ function App() {
               download={minFileName}
               style={{
                 display: "block",
-                padding: "14px",
+                padding: "16px",
                 background: "#3a7afe",
                 color: "white",
-                borderRadius: "8px",
-                fontWeight: "600",
+                borderRadius: "10px",
+                fontWeight: "700",
                 textDecoration: "none",
-                marginBottom: "12px",
+                marginBottom: "14px",
+                fontSize: "17px",
+                boxShadow: "0 4px 14px rgba(58, 122, 254, 0.3)",
               }}
             >
-              Download {minFileName}
+              ⬇️ Download optimized PDF
             </a>
 
             <a
@@ -179,14 +202,14 @@ function App() {
               style={{
                 display: "block",
                 padding: "12px",
-                background: "#ddd",
+                background: "#eee",
                 borderRadius: "8px",
                 textDecoration: "none",
                 color: "#333",
                 fontWeight: "500",
               }}
             >
-              Compress another PDF
+              ↺ Compress another PDF
             </a>
           </>
         )}
