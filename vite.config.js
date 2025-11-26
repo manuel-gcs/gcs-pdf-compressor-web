@@ -1,7 +1,14 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from "vite";
 
 export default defineConfig({
-  plugins: [react()],
-  base: './', // 🔥 ESSENCIAL PARA VERCEL
-})
+  build: {
+    rollupOptions: {
+      output: {
+        format: "es" // 🔥 IMPORTANTE: workers só funcionam como ES modules
+      }
+    }
+  },
+  worker: {
+    format: "es" // 🔥 corrige o erro no Vercel
+  }
+});
